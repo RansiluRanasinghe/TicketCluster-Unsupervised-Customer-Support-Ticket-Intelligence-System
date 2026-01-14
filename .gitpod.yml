@@ -1,0 +1,26 @@
+# .gitpod.yml
+image: gitpod/workspace-python-3.9
+
+tasks:
+  - init: |
+      pip install -r requirements.txt
+  - command: |
+      python app.py
+
+ports:
+  - port: 8000
+    onOpen: open-preview
+    visibility: public
+
+github:
+  prebuilds:
+    master: true
+    branches: true
+    pullRequests: true
+    addCheck: true
+    addComment: true
+    addBadge: true
+
+vscode:
+  extensions:
+    - ms-python.python
