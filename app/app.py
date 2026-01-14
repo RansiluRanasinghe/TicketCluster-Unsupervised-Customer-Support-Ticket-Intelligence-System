@@ -4,18 +4,16 @@ import joblib
 import json
 import numpy as np
 import time
+import os
 from typing import List, Dict
-from sklearn.metrics.pairwise import cosine_similarity
 
 class Ticket(BaseModel):
-
     subject: str
     body: str
     language: str = "en"
     priority: int = 2
 
 class ClusterResponse(BaseModel):
-
     cluster_id: int
     cluster_theme: str
     confidence: float
@@ -24,85 +22,81 @@ class ClusterResponse(BaseModel):
     processing_time_ms: float
 
 class HealthResponse(BaseModel):
-
     status: str
     total_clusters: int
     uptime_seconds: float
 
-
 vectorizer = None
 kmeans_model = None
-
 cluster_themes = {}
 cluster_sizes = {}
-
 feature_names = []
 startup_time = time.time()
 
 def load_models():
-
-    global vectorizer, kmeans_model, cluster_themes, feature_names, cluser_sizes
-
+    global vectorizer, kmeans_model, cluster_themes, feature_names, cluster_sizes
+    
     try:
-        vectorizer = joblib.load("models/vectorizer.pkl")
-        kmeans_model = joblib.load("models/kmeans_model.pkl")
-
-        with open("models/cluster_themes.json", "r") as f:
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        
+        vectorizer = joblib.load(os.path.join(base_dir, "app/models", "vectorizer.pkl"))
+        kmeans_model = joblib.load(os.path.join(base_dir, "app/models", "kmeans_model.pkl"))
+        
+        with open(os.path.join(base_dir, "app/models", "cluster_themes.json"), "r") as f:
             themes = json.load(f)
-
             cluster_themes = {int(k): v for k, v in themes.items()}
-
+        
         feature_names = vectorizer.get_feature_names_out()
-
+        
         for i in range(kmeans_model.n_clusters):
             cluster_sizes[i] = 1000
-
+        
         print("Models loaded successfully.")
-
+        
     except Exception as e:
         print(f"Error loading models: {e}")
         raise
 
-
 def preprocessor(subject: str, body: str) -> str:
-
     combined = f"{subject} {body}".lower().strip()
     import re
-
     combined = re.sub(r'\s+', ' ', combined)
     return combined
 
 def extract_keywords(text_vector, top_n: int = 5) -> List[str]:
-
     if hasattr(text_vector, "toarray"):
         vector_array = text_vector.toarray().flatten()
     else:
         vector_array = text_vector.flatten()
-
+    
     nonzero = np.where(vector_array > 0)[0]
-
+    
     if len(nonzero) == 0:
         return []
     
     top_indices = nonzero[np.argsort(vector_array[nonzero])[-top_n:][::-1]]
     return [feature_names[i] for i in top_indices]
 
-
-def clac_confidence(text_vector, cluster_id: int) -> float:
-
+def calc_confidence(text_vector, cluster_id: int) -> float:
     centroid = kmeans_model.cluster_centers_[cluster_id]
+    
     if hasattr(text_vector, "toarray"):
         vector_array = text_vector.toarray().flatten()
     else:
         vector_array = text_vector.flatten()
-
-    try:
-        similarity = cosine_similarity(vector_array, centroid.reshape(1, -1))[0][0]
-        return max(0.0, min(1.0, similarity))
     
+    try:
+        dot_product = np.dot(vector_array, centroid)
+        norm_vector = np.linalg.norm(vector_array)
+        norm_centroid = np.linalg.norm(centroid)
+        
+        if norm_vector == 0 or norm_centroid == 0:
+            return 0.5
+        
+        similarity = dot_product / (norm_vector * norm_centroid)
+        return max(0.0, min(1.0, similarity))
     except:
         return 0.5
-    
 
 app = FastAPI(
     title="Ticket Cluster API",
@@ -128,7 +122,6 @@ def root():
 
 @app.get("/health", response_model=HealthResponse)
 def health_check():
-
     if vectorizer is None or kmeans_model is None:
         raise HTTPException(status_code=500, detail="Models not loaded")
 
@@ -140,11 +133,10 @@ def health_check():
 
 @app.post("/cluster", response_model=ClusterResponse)
 def cluster_tickets(ticket: Ticket):
-
     if vectorizer is None or kmeans_model is None:
         raise HTTPException(status_code=500, detail="Models not loaded")
     
-    startup_time = time.time()
+    start_time = time.time()
 
     try:
         processed_text = preprocessor(ticket.subject, ticket.body)
@@ -152,20 +144,20 @@ def cluster_tickets(ticket: Ticket):
 
         cluster_id = int(kmeans_model.predict(text_vector)[0])
 
-        confidence = clac_confidence(text_vector, cluster_id)
+        confidence = calc_confidence(text_vector, cluster_id)
 
         keywords = extract_keywords(text_vector, top_n=5)
         theme = cluster_themes.get(cluster_id, "General Support")
 
-        sample_size = cluser_sizes.get(cluster_id, 0)
+        sample_size = cluster_sizes.get(cluster_id, 0)
 
-        processing_time = (time.time() - startup_time) * 1000
+        processing_time = (time.time() - start_time) * 1000
 
         return ClusterResponse(
             cluster_id=cluster_id,
+            cluster_theme=theme,
             confidence=confidence,
-            keywords=keywords,
-            theme=theme,
+            similar_keywords=keywords,
             sample_size=sample_size,
             processing_time_ms=processing_time
         )
@@ -175,20 +167,19 @@ def cluster_tickets(ticket: Ticket):
     
 @app.post("/cluster/batch")
 def cluster_batch(tickets: List[Ticket]):
-
     if vectorizer is None or kmeans_model is None:
         raise HTTPException(status_code=500, detail="Models not loaded")
     
-    startup_time = time.time()
+    start_time = time.time()
 
-    results= []
+    results = []
 
     for ticket in tickets:
         try:
             processed_text = preprocessor(ticket.subject, ticket.body)
             text_vector = vectorizer.transform([processed_text])
             cluster_id = int(kmeans_model.predict(text_vector)[0])
-            confidence = clac_confidence(text_vector, cluster_id)
+            confidence = calc_confidence(text_vector, cluster_id)
             keywords = extract_keywords(text_vector, top_n=5)
             theme = cluster_themes.get(cluster_id, "General Support")
             
@@ -201,24 +192,22 @@ def cluster_batch(tickets: List[Ticket]):
             })
 
         except Exception as e:
-
             results.append({
                 "subject": ticket.subject[:50] + "..." if len(ticket.subject) > 50 else ticket.subject,
                 "error": str(e)
             })
 
-        total_time = (time.time() - startup_time) * 1000
+    total_time = (time.time() - start_time) * 1000
 
-        return {
-            "total_tickets": len(tickets),
-            "processed_tickets": len([r for r in results if "error" not in r]),
-            "total_time_ms": total_time,
-            "results": results
-        }
+    return {
+        "total_tickets": len(tickets),
+        "processed_tickets": len([r for r in results if "error" not in r]),
+        "total_time_ms": total_time,
+        "results": results
+    }
     
 @app.get("/clusters")
 def get_clusters():
-    
     if kmeans_model is None:
         raise HTTPException(status_code=503, detail="Models not loaded")
     
@@ -226,7 +215,6 @@ def get_clusters():
     
     for cluster_id in range(kmeans_model.n_clusters):
         theme = cluster_themes.get(cluster_id, "Unknown")
-        
 
         centroid = kmeans_model.cluster_centers_[cluster_id]
         top_indices = np.argsort(centroid)[-10:][::-1]
@@ -247,7 +235,6 @@ def get_clusters():
 
 @app.get("/clusters/{cluster_id}")
 def get_cluster_info(cluster_id: int):
-    
     if kmeans_model is None or cluster_id >= kmeans_model.n_clusters:
         raise HTTPException(status_code=404, detail="Cluster not found")
     
@@ -268,7 +255,7 @@ def get_cluster_info(cluster_id: int):
         
 if __name__ == "__main__":
     import uvicorn
-    print("🚀 Starting TicketCluster API...")
+    print("Starting TicketCluster API...")
     uvicorn.run(
         "app:app",
         host="0.0.0.0",
