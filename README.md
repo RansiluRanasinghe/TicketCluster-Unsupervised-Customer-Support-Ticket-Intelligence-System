@@ -6,32 +6,32 @@
 ![AWS](https://img.shields.io/badge/AWS-FF9900?style=flat-square&logo=amazon-aws&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
-TicketCluster is an **unsupervised NLP system** that automatically discovers hidden patterns in customer support tickets using **K-Means clustering**, exposes the intelligence via a **FastAPI service**, and is designed for **cloud deployment**.
+TicketCluster is a **production-aligned unsupervised NLP system** that discovers hidden patterns in customer support tickets using **K-Means clustering**, exposes insights via a **FastAPI service**, and is designed for **cloud-native deployment**.
 
-This project simulates how real companies analyze large volumes of unlabeled support tickets to improve routing, operations, and decision-making — **without relying on pre-defined categories**.
+This project mirrors how real organizations analyze large volumes of unlabeled support tickets to uncover emerging issues, reduce manual analysis, and support operational decision-making — **without relying on predefined categories**.
 
 > 🚫 Not a toy clustering demo  
-> ✅ A **production-aligned ML system** for real operational use cases
+> ✅ A **realistic ML system** built with production constraints in mind
 
 ---
 
 ## 🧠 Business Problem
 
-Modern organizations receive thousands of customer support tickets daily, many of which:
+Modern organizations receive thousands of customer support tickets daily. In real environments, many tickets:
 
 - ❌ Are **unlabeled**
-- ❌ Come from **new products or regions**
+- ❌ Come from **new products, features, or regions**
 - ❌ Represent **emerging issues** not yet categorized
 
 ### Challenges in Real Systems
 
 - Manual analysis **does not scale**
 - Labeling is **expensive and slow**
-- Predefined categories **lag behind real problems**
+- Predefined categories **lag behind real customer problems**
 
 ### The Need
 
-Companies require systems that can:
+Organizations require systems that can:
 - ✅ Detect **emerging issue patterns**
 - ✅ Group **similar tickets automatically**
 - ✅ Support **human decision-making** with data
@@ -44,14 +44,14 @@ Companies require systems that can:
 
 1. Converting raw ticket text into numerical representations
 2. Applying unsupervised K-Means clustering
-3. Discovering natural groupings of customer issues
-4. Serving clustering results via a clean, production-ready API
+3. Discovering natural semantic groupings of customer issues
+4. Serving clustering intelligence through a clean FastAPI service
 
 ### Business Value
 
 This enables:
 - 🔍 **Early issue discovery**
-- 📊 **Support workload analysis**
+- 📊 **Support workload and trend analysis**
 - 💡 **Operational insight** without labeled data
 
 ---
@@ -61,53 +61,35 @@ This enables:
 | Property | Description |
 |----------|-------------|
 | **Source** | Kaggle — Multilingual Customer Support Tickets |
-| **Type** | Synthetic but industry-realistic support tickets |
+| **Type** | Synthetic but industry-realistic |
 | **Languages** | English, German (extensible) |
 | **Fields Used** | Subject, Body |
-| **Labels** | Not used during training (unsupervised learning) |
+| **Labels** | Not used for training |
 
 ### Important Note
 
-> **Existing labels** (e.g., queues) are used **only for evaluation and validation**, never for model training.  
-> This ensures the system reflects **true unsupervised learning behavior**.
+> **Existing labels** (e.g., queues) are used **only for evaluation and validation**, never for training.  
+> This preserves true unsupervised learning behavior, matching real-world analytics pipelines.
 
 ---
 
 ## 🏗️ System Architecture
 
 ```
-┌──────────────────────┐
-│ Customer Ticket Text │
-│ (Subject + Body)     │
-└──────────┬───────────┘
-           │
-           ▼
-┌──────────────────────────┐
-│ Text Preprocessing       │
-│ (Minimal, Production)    │
-└──────────┬───────────────┘
-           │
-           ▼
-┌──────────────────────────┐
-│ Vectorization (TF-IDF)   │
-└──────────┬───────────────┘
-           │
-           ▼
-┌──────────────────────────┐
-│ K-Means Clustering       │
-│ (Unsupervised Model)     │
-└──────────┬───────────────┘
-           │
-           ▼
-┌──────────────────────────┐
-│ FastAPI Inference Layer  │
-└──────────┬───────────────┘
-           │
-           ▼
-┌──────────────────────────┐
-│ AWS Deployment           │
-│ (Public Access)          │
-└──────────────────────────┘
+Customer Ticket Text
+(Subject + Body)
+        ↓
+Minimal Text Preprocessing
+(Production-safe)
+        ↓
+TF-IDF Vectorization
+        ↓
+K-Means Clustering
+(Unsupervised)
+        ↓
+FastAPI Inference Layer
+        ↓
+Cloud Deployment (AWS-ready)
 ```
 
 ---
@@ -119,28 +101,28 @@ This enables:
 - ✓ **Industry-standard** clustering baseline
 - ✓ **Interpretable** cluster centroids
 - ✓ **Scalable** for large ticket volumes
-- ✓ **Easy to audit** and explain
+- ✓ **Easy to audit** and explain to stakeholders
 
 ### Feature Engineering
 
 - **Combined text**: Subject + Body
 - **Minimal preprocessing** (no aggressive cleaning)
-- **TF-IDF vectorization** for semantic representation
+- **TF-IDF with n-grams** for semantic signal
 
 ### Cluster Interpretation
 
-Clusters are analyzed and assigned **human-readable themes** based on:
-- Dominant keywords
+Clusters are analyzed and assigned **human-readable business themes** using:
+- Dominant centroid keywords
 - Sample ticket inspection
-- Business relevance
+- Optional comparison with known queues
 
-This mirrors how **real analytics teams** work.
+This mirrors how **real analytics teams** interpret unsupervised results.
 
 ---
 
 ## 📈 Evaluation Strategy
 
-Since this is an **unsupervised system**:
+Because this is an **unsupervised system**:
 
 - ❌ No accuracy score is optimized
 - ✅ Evaluation focuses on:
@@ -148,40 +130,27 @@ Since this is an **unsupervised system**:
   - **Semantic consistency**
   - **Business interpretability**
 
-### Optional Analysis
+### Supporting Analysis
 
-- Comparing discovered clusters with existing ticket queues
-- Identifying overlaps and hidden sub-themes
-- Validating cluster themes with domain experts
+- **Silhouette Score**
+- **Davies-Bouldin Index**
+- **Inertia trends** (Elbow Method)
+- **Cluster purity comparison** (labels used only for validation)
+
+> **Note:** Moderate scores are expected — real support tickets are noisy, overlapping, and ambiguous.
 
 ---
 
 ## 🚀 API Design (FastAPI)
 
+The FastAPI layer exposes clustering intelligence in a **production-safe, stateless** manner.
+
 ### Core Capabilities
 
 1. Accept raw customer ticket text
-2. Apply the same preprocessing pipeline
-3. Assign the ticket to a discovered cluster
-4. Return cluster metadata
-
-### Example API Response
-
-```json
-{
-  "cluster_id": 3,
-  "cluster_theme": "Authentication & Login Issues",
-  "similarity_score": 0.87,
-  "timestamp": "2025-01-07T10:45:00Z"
-}
-```
-
-### Why This Matters
-
-This demonstrates:
-- ✓ **ML-to-production** thinking
-- ✓ **Model serving** practices
-- ✓ **Clean API contract** design
+2. Apply the same preprocessing & vectorization pipeline
+3. Assign tickets to discovered clusters
+4. Return cluster metadata and confidence signals
 
 ---
 
@@ -196,60 +165,86 @@ GET /health
 ```json
 {
   "status": "healthy",
-  "model": "loaded",
-  "total_clusters": 7
+  "total_clusters": 6,
+  "uptime_seconds": 1234.5
 }
 ```
 
 ---
 
-### Cluster Ticket
+### Cluster a Ticket
 ```http
 POST /cluster
 ```
 
-**Request Body:**
+**Request:**
 ```json
 {
-  "subject": "Cannot reset password",
-  "body": "I've tried multiple times but the reset link doesn't work"
+  "subject": "Cannot login to my account",
+  "body": "I've reset my password multiple times but still get an authentication error",
+  "language": "en",
+  "priority": 2
 }
 ```
 
 **Response:**
 ```json
 {
-  "cluster_id": 3,
-  "cluster_theme": "Authentication & Login Issues",
-  "similarity_score": 0.87,
-  "top_keywords": ["password", "reset", "login", "authentication"],
-  "timestamp": "2025-01-07T10:45:00Z"
+  "cluster_id": 5,
+  "cluster_theme": "Data Sync & Integration Issues",
+  "confidence": 0.06,
+  "similar_keywords": ["account", "login", "documents"],
+  "sample_size": 1000,
+  "processing_time_ms": 65.0
+}
+```
+
+> **Note:** Confidence represents cosine similarity to the cluster centroid, not classification certainty.
+
+---
+
+### Batch Clustering
+```http
+POST /cluster/batch
+```
+
+Processes multiple tickets efficiently for analytics workflows.
+
+**Request:**
+```json
+{
+  "tickets": [
+    {
+      "subject": "Payment failed",
+      "body": "Transaction declined"
+    },
+    {
+      "subject": "App crash",
+      "body": "Crashes when uploading files"
+    }
+  ]
 }
 ```
 
 ---
 
-### Get Cluster Statistics
+### Cluster Metadata
 ```http
-GET /clusters/stats
+GET /clusters
 ```
+
+Returns discovered cluster themes, sizes, and top keywords.
 
 **Response:**
 ```json
 {
-  "total_clusters": 7,
+  "total_clusters": 6,
   "clusters": [
     {
       "cluster_id": 0,
-      "theme": "Billing & Payment Issues",
+      "theme": "Billing & Payments",
       "size": 1247,
-      "percentage": 18.5
-    },
-    {
-      "cluster_id": 1,
-      "theme": "Technical Support",
-      "size": 1098,
-      "percentage": 16.3
+      "top_keywords": ["payment", "charge", "invoice"]
     }
   ]
 }
@@ -261,7 +256,7 @@ GET /clusters/stats
 
 ### cURL
 ```bash
-curl -X POST "http://localhost:8000/cluster" \
+curl -X POST http://localhost:8000/cluster \
   -H "Content-Type: application/json" \
   -d '{
     "subject": "Payment failed",
@@ -273,13 +268,14 @@ curl -X POST "http://localhost:8000/cluster" \
 ```python
 import requests
 
-url = "http://localhost:8000/cluster"
-data = {
-    "subject": "Cannot login",
-    "body": "Password reset link not working"
-}
+response = requests.post(
+    "http://localhost:8000/cluster",
+    json={
+        "subject": "Cannot login",
+        "body": "Password reset link not working"
+    }
+)
 
-response = requests.post(url, json=data)
 print(response.json())
 ```
 
@@ -290,7 +286,7 @@ const response = await fetch('http://localhost:8000/cluster', {
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     subject: 'App keeps crashing',
-    body: 'Every time I try to upload files the app crashes'
+    body: 'Crashes every time I upload files'
   })
 });
 
@@ -302,28 +298,23 @@ console.log(result);
 
 ## ☁️ Deployment Strategy
 
-The project is designed with **AWS deployment readiness** in mind:
+The system is designed with **AWS deployment readiness** in mind:
 
-- ✓ Model artifacts stored in **S3**
-- ✓ **Stateless inference** logic
-- ✓ API designed for **scalability**
-- ✓ **Public accessibility** for demos and testing
-
-This mirrors internal ML services used in **enterprise environments**.
+- ✓ Model artifacts stored externally (**S3-ready**)
+- ✓ **Stateless FastAPI** inference
+- ✓ **Version-safe** model loading
+- ✓ **Public endpoint** compatibility
 
 ### Deployment Architecture
 
 ```
-AWS S3 (Model Storage)
-        │
-        ▼
-EC2 / ECS (FastAPI Service)
-        │
-        ▼
-API Gateway (Public Endpoint)
-        │
-        ▼
-CloudWatch (Monitoring)
+S3 (Model Artifacts)
+        ↓
+EC2 / ECS (FastAPI)
+        ↓
+API Gateway
+        ↓
+CloudWatch
 ```
 
 ---
@@ -342,9 +333,9 @@ CloudWatch (Monitoring)
 - **Data Processing**: NumPy, Pandas
 
 ### Cloud & Infrastructure
-- **Cloud Provider**: AWS
-- **Storage**: S3 (artifact hosting)
-- **Architecture**: Deployment-ready, stateless
+- **Cloud Provider**: AWS (deployment-ready)
+- **Storage**: S3 (artifact storage)
+- **Architecture**: Stateless API design
 
 ---
 
@@ -352,58 +343,48 @@ CloudWatch (Monitoring)
 
 ### Prerequisites
 - Python 3.8+
-- AWS account (optional, for deployment)
 - pip or conda
+- AWS account (optional)
 
-### 1️⃣ Clone Repository
+### Run Locally
+
 ```bash
+# Clone repository
 git clone https://github.com/RansiluRanasinghe/TicketCluster-Unsupervised-ML.git
 cd TicketCluster-Unsupervised-ML
-```
 
-### 2️⃣ Install Dependencies
-```bash
+# Install dependencies
 pip install -r requirements.txt
+
+# Start API server
+uvicorn app:app --reload
 ```
 
-### 3️⃣ Train Clustering Model
-```bash
-jupyter notebook
-# Open and run clustering notebook
-```
-
-### 4️⃣ Start API Server
-```bash
-uvicorn main:app --reload
-```
-
-### 5️⃣ Test API
-Navigate to: [http://localhost:8000/docs](http://localhost:8000/docs)
+Visit: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ---
 
 ## 📊 Discovered Clusters (Example)
 
-| Cluster ID | Theme | Top Keywords | Size |
-|------------|-------|--------------|------|
-| 0 | Billing & Payments | payment, charge, invoice, refund | 18.5% |
-| 1 | Technical Support | error, crash, bug, issue | 16.3% |
-| 2 | Authentication | login, password, reset, access | 14.2% |
-| 3 | Account Management | account, profile, settings, update | 12.8% |
-| 4 | Product Features | feature, function, how-to, guide | 11.7% |
-| 5 | Performance Issues | slow, loading, timeout, speed | 10.9% |
-| 6 | General Inquiries | question, information, help, support | 15.6% |
+| Cluster | Theme | Description |
+|---------|-------|-------------|
+| 0 | Billing & Payments | Charges, invoices, refunds |
+| 1 | Technical Errors | Crashes, bugs, failures |
+| 2 | Authentication | Login & password issues |
+| 3 | Account Management | Profile & settings |
+| 4 | Performance Issues | Slow response & timeouts |
+| 5 | General Support | Mixed or emerging issues |
 
 ---
 
 ## 🔮 Future Enhancements
 
-- [ ] Add **sentence-transformer embeddings** for better semantic clustering
-- [ ] Implement **dynamic cluster updates** as new tickets arrive
-- [ ] Add **drift detection** for emerging issues
-- [ ] Integrate **storage layer** for ticket analytics
-- [ ] Extend to **multilingual clustering**
-- [ ] Add **visualization dashboard** for cluster exploration
+- [ ] **Sentence-transformer embeddings** for better semantic understanding
+- [ ] **Dynamic cluster updates** as new tickets arrive
+- [ ] **Drift detection** for emerging issues
+- [ ] **Persistent analytics storage**
+- [ ] **Multilingual expansion**
+- [ ] **Visualization dashboard** for cluster exploration
 
 ---
 
@@ -412,21 +393,21 @@ Navigate to: [http://localhost:8000/docs](http://localhost:8000/docs)
 This project demonstrates:
 
 ✓ **Unsupervised NLP modeling**  
-✓ **Real-world customer support analytics**  
-✓ **Production-oriented API design**  
+✓ **Real-world support analytics**  
+✓ **ML-to-API system design**  
 ✓ **Cloud deployment awareness**  
-✓ **Business-driven ML decisions**
+✓ **Business-driven ML thinking**
 
 ### It Goes Beyond:
 
-- ❌ Simple clustering demos
-- ❌ Academic notebooks
-- ❌ Label-dependent ML projects
+- ❌ Toy clustering demos
+- ❌ Accuracy-obsessed notebooks
+- ❌ Label-dependent ML systems
 
 ### Skills Demonstrated
 - Unsupervised machine learning
 - NLP and text processing
-- API development with FastAPI
+- RESTful API development
 - Cloud architecture (AWS)
 - Production ML system design
 
@@ -435,8 +416,8 @@ This project demonstrates:
 ## 🎯 Use Cases
 
 This system can be adapted for:
-- **SaaS companies** — Support ticket intelligence
-- **E-commerce** — Customer inquiry analysis
+- **SaaS** — Support ticket intelligence
+- **E-commerce** — Inquiry analysis
 - **Healthcare** — Patient feedback clustering
 - **Finance** — Complaint pattern detection
 - **Product teams** — Feature request grouping
@@ -460,7 +441,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Interests:**  
 Machine Learning • NLP • Backend Engineering • Production ML Systems
 
-Always open to discussions around:
+Always open to discussions on:
 - Unsupervised learning in industry
 - ML system design
 - Support analytics
@@ -470,7 +451,7 @@ Always open to discussions around:
 
 <div align="center">
 
-**⭐ If you find this project valuable, consider giving it a star!**
+**⭐ If you find this project useful, consider giving it a star!**
 
 **Built with a production-first ML mindset.**
 
