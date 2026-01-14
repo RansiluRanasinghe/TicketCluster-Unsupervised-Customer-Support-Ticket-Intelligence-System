@@ -255,10 +255,10 @@ def get_cluster_info(cluster_id: int):
         
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT", 8000))
+    print("Starting TicketCluster API...")
     uvicorn.run(
         "app:app",
         host="0.0.0.0",
-        port=port,
-        reload=False
+        port=8000,
+        reload=True
     )
