@@ -34,7 +34,7 @@ vectorizer = None
 kmeans_model = None
 
 cluster_themes = {}
-cluser_sizes = {}
+cluster_sizes = {}
 
 feature_names = []
 startup_time = time.time()
@@ -102,6 +102,167 @@ def clac_confidence(text_vector, cluster_id: int) -> float:
     
     except:
         return 0.5
+    
 
+app = FastAPI(
+    title="Ticket Cluster API",
+    description="An API for clustering customer support tickets using unsupervised learning techniques.",
+    version= "1.0.0"
+)
 
+@app.on_event("startup")
+def startup_event():
+    load_models()
 
+@app.get("/")
+def root():
+     return {
+        "message": "Welcome to TicketCluster API",
+        "endpoints": {
+            "health": "/health",
+            "cluster": "POST /cluster",
+            "cluster_info": "/clusters",
+            "docs": "/docs"
+        }
+    }
+
+@app.get("/health", response_model=HealthResponse)
+def health_check():
+
+    if vectorizer is None or kmeans_model is None:
+        raise HTTPException(status_code=500, detail="Models not loaded")
+
+    return HealthResponse(
+        status="healthy",
+        total_clusters=kmeans_model.n_clusters,
+        uptime_seconds=time.time() - startup_time
+    )
+
+@app.post("/cluster", response_model=ClusterResponse)
+def cluster_tickets(ticket: Ticket):
+
+    if vectorizer is None or kmeans_model is None:
+        raise HTTPException(status_code=500, detail="Models not loaded")
+    
+    startup_time = time.time()
+
+    try:
+        processed_text = preprocessor(ticket.subject, ticket.body)
+        text_vector = vectorizer.transform([processed_text])
+
+        cluster_id = int(kmeans_model.predict(text_vector)[0])
+
+        confidence = clac_confidence(text_vector, cluster_id)
+
+        keywords = extract_keywords(text_vector, top_n=5)
+        theme = cluster_themes.get(cluster_id, "General Support")
+
+        sample_size = cluser_sizes.get(cluster_id, 0)
+
+        processing_time = (time.time() - startup_time) * 1000
+
+        return ClusterResponse(
+            cluster_id=cluster_id,
+            confidence=confidence,
+            keywords=keywords,
+            theme=theme,
+            sample_size=sample_size,
+            processing_time_ms=processing_time
+        )
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.post("/cluster/batch")
+def cluster_batch(tickets: List[Ticket]):
+
+    if vectorizer is None or kmeans_model is None:
+        raise HTTPException(status_code=500, detail="Models not loaded")
+    
+    startup_time = time.time()
+
+    results= []
+
+    for ticket in tickets:
+        try:
+            processed_text = preprocessor(ticket.subject, ticket.body)
+            text_vector = vectorizer.transform([processed_text])
+            cluster_id = int(kmeans_model.predict(text_vector)[0])
+            confidence = clac_confidence(text_vector, cluster_id)
+            keywords = extract_keywords(text_vector, top_n=5)
+            theme = cluster_themes.get(cluster_id, "General Support")
+            
+            results.append({
+                "subject": ticket.subject[:50] + "..." if len(ticket.subject) > 50 else ticket.subject,
+                "cluster_id": cluster_id,
+                "cluster_theme": theme,
+                "confidence": confidence,
+                "keywords": keywords
+            })
+
+        except Exception as e:
+
+            results.append({
+                "subject": ticket.subject[:50] + "..." if len(ticket.subject) > 50 else ticket.subject,
+                "error": str(e)
+            })
+
+        total_time = (time.time() - startup_time) * 1000
+
+        return {
+            "total_tickets": len(tickets),
+            "processed_tickets": len([r for r in results if "error" not in r]),
+            "total_time_ms": total_time,
+            "results": results
+        }
+    
+@app.get("/clusters")
+def get_clusters():
+    
+    if kmeans_model is None:
+        raise HTTPException(status_code=503, detail="Models not loaded")
+    
+    clusters_info = []
+    
+    for cluster_id in range(kmeans_model.n_clusters):
+        theme = cluster_themes.get(cluster_id, "Unknown")
+        
+
+        centroid = kmeans_model.cluster_centers_[cluster_id]
+        top_indices = np.argsort(centroid)[-10:][::-1]
+        top_keywords = [feature_names[i] for i in top_indices[:5]]
+        
+        clusters_info.append({
+            "cluster_id": cluster_id,
+            "theme": theme,
+            "size": cluster_sizes.get(cluster_id, 0),
+            "top_keywords": top_keywords
+        })
+    
+    return {
+        "total_clusters": kmeans_model.n_clusters,
+        "features": len(feature_names),
+        "clusters": clusters_info
+    }
+
+@app.get("/clusters/{cluster_id}")
+def get_cluster_info(cluster_id: int):
+    
+    if kmeans_model is None or cluster_id >= kmeans_model.n_clusters:
+        raise HTTPException(status_code=404, detail="Cluster not found")
+    
+    theme = cluster_themes.get(cluster_id, "Unknown")
+    
+    centroid = kmeans_model.cluster_centers_[cluster_id]
+    top_indices = np.argsort(centroid)[-15:][::-1]
+    top_keywords = [{"word": feature_names[i], "score": float(centroid[i])} 
+                    for i in top_indices[:10]]
+    
+    return {
+        "cluster_id": cluster_id,
+        "theme": theme,
+        "size": cluster_sizes.get(cluster_id, 0),
+        "centroid_keywords": top_keywords,
+        "confidence_threshold": 0.5 
+    }
+        
