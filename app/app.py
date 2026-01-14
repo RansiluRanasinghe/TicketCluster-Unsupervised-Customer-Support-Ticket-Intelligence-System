@@ -64,8 +64,44 @@ def load_models():
         raise
 
 
-def preprocessor(text_vector, top_n: int = 5) -> List[str]:
+def preprocessor(subject: str, body: str) -> str:
+
+    combined = f"{subject} {body}".lower().strip()
+    import re
+
+    combined = re.sub(r'\s+', ' ', combined)
+    return combined
+
+def extract_keywords(text_vector, top_n: int = 5) -> List[str]:
 
     if hasattr(text_vector, "toarray"):
-        vector_array = text_vector.toarray()
+        vector_array = text_vector.toarray().flatten()
+    else:
+        vector_array = text_vector.flatten()
+
+    nonzero = np.where(vector_array > 0)[0]
+
+    if len(nonzero) == 0:
+        return []
+    
+    top_indices = nonzero[np.argsort(vector_array[nonzero])[-top_n:][::-1]]
+    return [feature_names[i] for i in top_indices]
+
+
+def clac_confidence(text_vector, cluster_id: int) -> float:
+
+    centroid = kmeans_model.cluster_centers_[cluster_id]
+    if hasattr(text_vector, "toarray"):
+        vector_array = text_vector.toarray().flatten()
+    else:
+        vector_array = text_vector.flatten()
+
+    try:
+        similarity = cosine_similarity(vector_array, centroid.reshape(1, -1))[0][0]
+        return max(0.0, min(1.0, similarity))
+    
+    except:
+        return 0.5
+
+
 
