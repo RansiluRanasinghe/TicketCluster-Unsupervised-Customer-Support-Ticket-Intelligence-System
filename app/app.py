@@ -266,3 +266,12 @@ def get_cluster_info(cluster_id: int):
         "confidence_threshold": 0.5 
     }
         
+if __name__ == "__main__":
+    import uvicorn
+    print("🚀 Starting TicketCluster API...")
+    uvicorn.run(
+        "app:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True
+    )
