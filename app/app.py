@@ -55,7 +55,7 @@ def load_models():
         feature_names = vectorizer.get_feature_names_out()
 
         for i in range(kmeans_model.n_clusters):
-            cluser_sizes[i] = 1000
+            cluster_sizes[i] = 1000
 
         print("Models loaded successfully.")
 
