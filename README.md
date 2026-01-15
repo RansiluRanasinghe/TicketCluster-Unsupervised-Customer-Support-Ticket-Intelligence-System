@@ -3,15 +3,17 @@
 ![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white)
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?style=flat-square&logo=scikit-learn&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
-![AWS](https://img.shields.io/badge/AWS-FF9900?style=flat-square&logo=amazon-aws&logoColor=white)
+![NLP](https://img.shields.io/badge/NLP-4285F4?style=flat-square&logo=google&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
-TicketCluster is a **production-aligned unsupervised NLP system** that discovers hidden patterns in customer support tickets using **K-Means clustering**, exposes insights via a **FastAPI service**, and is designed for **cloud-native deployment**.
+TicketCluster is a **production-aligned unsupervised NLP system** that discovers hidden patterns in customer support tickets using **K-Means clustering**.
 
-This project mirrors how real organizations analyze large volumes of unlabeled support tickets to uncover emerging issues, reduce manual analysis, and support operational decision-making — **without relying on predefined categories**.
+The project focuses on **modeling, evaluation, and system design**, demonstrating how organizations can analyze large volumes of unlabeled support tickets to uncover emerging issues and operational insights — **without relying on predefined categories**.
+
+While the system was designed with API and cloud deployment readiness in mind, the project intentionally concludes at the **completed model + local inference stage**, reflecting a realistic ML development lifecycle.
 
 > 🚫 Not a toy clustering demo  
-> ✅ A **realistic ML system** built with production constraints in mind
+> ✅ A **realistic unsupervised ML system** built with production constraints in mind
 
 ---
 
@@ -45,7 +47,7 @@ Organizations require systems that can:
 1. Converting raw ticket text into numerical representations
 2. Applying unsupervised K-Means clustering
 3. Discovering natural semantic groupings of customer issues
-4. Serving clustering intelligence through a clean FastAPI service
+4. Designing a clean inference layer suitable for API-based systems
 
 ### Business Value
 
@@ -69,11 +71,11 @@ This enables:
 ### Important Note
 
 > **Existing labels** (e.g., queues) are used **only for evaluation and validation**, never for training.  
-> This preserves true unsupervised learning behavior, matching real-world analytics pipelines.
+> This preserves true unsupervised learning behavior and mirrors real analytics pipelines.
 
 ---
 
-## 🏗️ System Architecture
+## 🏗️ System Architecture (Conceptual)
 
 ```
 Customer Ticket Text
@@ -87,10 +89,11 @@ TF-IDF Vectorization
 K-Means Clustering
 (Unsupervised)
         ↓
-FastAPI Inference Layer
-        ↓
-Cloud Deployment (AWS-ready)
+Local Inference Layer
+(API-ready design)
 ```
+
+> **Note:** The system architecture is **cloud-ready by design**, though not deployed publicly.
 
 ---
 
@@ -133,7 +136,7 @@ Because this is an **unsupervised system**:
 ### Supporting Analysis
 
 - **Silhouette Score**
-- **Davies-Bouldin Index**
+- **Davies–Bouldin Index**
 - **Inertia trends** (Elbow Method)
 - **Cluster purity comparison** (labels used only for validation)
 
@@ -141,126 +144,106 @@ Because this is an **unsupervised system**:
 
 ---
 
-## 🚀 API Design (FastAPI)
+## 🚀 API Design (Implemented Locally)
 
-The FastAPI layer exposes clustering intelligence in a **production-safe, stateless** manner.
+A **FastAPI-based inference layer** was implemented locally to demonstrate how clustering intelligence could be exposed in a **production-safe, stateless** manner.
 
 ### Core Capabilities
 
 1. Accept raw customer ticket text
 2. Apply the same preprocessing & vectorization pipeline
 3. Assign tickets to discovered clusters
-4. Return cluster metadata and confidence signals
+4. Return cluster metadata and similarity-based confidence signals
+
+> **Development Status:** The API was developed and tested locally but intentionally **not deployed publicly**.
+
+### Confidence Interpretation
+
+**Confidence values** represent cosine similarity to the cluster centroid, **not classification certainty** — an important distinction in unsupervised systems.
 
 ---
 
-## 📡 API Endpoints
+## ☁️ Deployment Status
 
-### Health Check
-```http
-GET /health
-```
+The system was designed for cloud deployment, but **public deployment was not completed**.
 
-**Response:**
-```json
-{
-  "status": "healthy",
-  "total_clusters": 6,
-  "uptime_seconds": 1234.5
-}
-```
+### Current Status
+
+- ✅ **Cloud-ready architecture**
+- ✅ **Stateless inference design**
+- ✅ **Version-safe model loading**
+- ❌ **No active AWS / Azure / Gitpod deployment**
+
+This reflects a **realistic project boundary**, where development concludes after validating the full ML and system design pipeline.
 
 ---
 
-### Cluster a Ticket
-```http
-POST /cluster
-```
+## 🛠️ Tech Stack
 
-**Request:**
-```json
-{
-  "subject": "Cannot login to my account",
-  "body": "I've reset my password multiple times but still get an authentication error",
-  "language": "en",
-  "priority": 2
-}
-```
+### Machine Learning
+- **Language**: Python
+- **Framework**: scikit-learn
+- **Vectorization**: TF-IDF
+- **Algorithm**: K-Means Clustering
 
-**Response:**
-```json
-{
-  "cluster_id": 5,
-  "cluster_theme": "Data Sync & Integration Issues",
-  "confidence": 0.06,
-  "similar_keywords": ["account", "login", "documents"],
-  "sample_size": 1000,
-  "processing_time_ms": 65.0
-}
-```
+### Backend & System Design
+- **API Framework**: FastAPI
+- **Server**: Uvicorn (local)
+- **Data Processing**: NumPy, Pandas
 
-> **Note:** Confidence represents cosine similarity to the cluster centroid, not classification certainty.
+### Architecture
+- **API-first design**
+- **Stateless inference logic**
+- **Cloud-compatible structure**
 
 ---
 
-### Batch Clustering
-```http
-POST /cluster/batch
+## 🚀 Quick Start (Local)
+
+### Prerequisites
+- Python 3.8+
+- pip or conda
+
+### Run Locally
+
+```bash
+# Clone repository
+git clone https://github.com/RansiluRanasinghe/TicketCluster-Unsupervised-ML.git
+cd TicketCluster-Unsupervised-ML
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Start API server
+uvicorn app:app --reload
 ```
 
-Processes multiple tickets efficiently for analytics workflows.
-
-**Request:**
-```json
-{
-  "tickets": [
-    {
-      "subject": "Payment failed",
-      "body": "Transaction declined"
-    },
-    {
-      "subject": "App crash",
-      "body": "Crashes when uploading files"
-    }
-  ]
-}
-```
+**Visit:** [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ---
 
-### Cluster Metadata
-```http
-GET /clusters
-```
+## 📊 Discovered Clusters (Example)
 
-Returns discovered cluster themes, sizes, and top keywords.
-
-**Response:**
-```json
-{
-  "total_clusters": 6,
-  "clusters": [
-    {
-      "cluster_id": 0,
-      "theme": "Billing & Payments",
-      "size": 1247,
-      "top_keywords": ["payment", "charge", "invoice"]
-    }
-  ]
-}
-```
+| Cluster | Theme | Description |
+|---------|-------|-------------|
+| 0 | Billing & Payments | Charges, invoices, refunds |
+| 1 | Technical Errors | Crashes, bugs, failures |
+| 2 | Authentication | Login & password issues |
+| 3 | Account Management | Profile & settings |
+| 4 | Performance Issues | Slow response & timeouts |
+| 5 | General Support | Mixed or emerging issues |
 
 ---
 
-## 🧪 Example Usage
+## 🧪 Example Usage (Local API)
 
 ### cURL
 ```bash
 curl -X POST http://localhost:8000/cluster \
   -H "Content-Type: application/json" \
   -d '{
-    "subject": "Payment failed",
-    "body": "Transaction was declined but money was deducted"
+    "subject": "Cannot login",
+    "body": "Password reset link not working"
   }'
 ```
 
@@ -271,8 +254,8 @@ import requests
 response = requests.post(
     "http://localhost:8000/cluster",
     json={
-        "subject": "Cannot login",
-        "body": "Password reset link not working"
+        "subject": "Payment failed",
+        "body": "Transaction declined but money was deducted"
     }
 )
 
@@ -296,95 +279,15 @@ console.log(result);
 
 ---
 
-## ☁️ Deployment Strategy
-
-The system is designed with **AWS deployment readiness** in mind:
-
-- ✓ Model artifacts stored externally (**S3-ready**)
-- ✓ **Stateless FastAPI** inference
-- ✓ **Version-safe** model loading
-- ✓ **Public endpoint** compatibility
-
-### Deployment Architecture
-
-```
-S3 (Model Artifacts)
-        ↓
-EC2 / ECS (FastAPI)
-        ↓
-API Gateway
-        ↓
-CloudWatch
-```
-
----
-
-## 🛠️ Tech Stack
-
-### Machine Learning
-- **Language**: Python
-- **Framework**: scikit-learn
-- **Vectorization**: TF-IDF
-- **Algorithm**: K-Means Clustering
-
-### Backend
-- **API Framework**: FastAPI
-- **Server**: Uvicorn (ASGI)
-- **Data Processing**: NumPy, Pandas
-
-### Cloud & Infrastructure
-- **Cloud Provider**: AWS (deployment-ready)
-- **Storage**: S3 (artifact storage)
-- **Architecture**: Stateless API design
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Python 3.8+
-- pip or conda
-- AWS account (optional)
-
-### Run Locally
-
-```bash
-# Clone repository
-git clone https://github.com/RansiluRanasinghe/TicketCluster-Unsupervised-ML.git
-cd TicketCluster-Unsupervised-ML
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Start API server
-uvicorn app:app --reload
-```
-
-Visit: [http://localhost:8000/docs](http://localhost:8000/docs)
-
----
-
-## 📊 Discovered Clusters (Example)
-
-| Cluster | Theme | Description |
-|---------|-------|-------------|
-| 0 | Billing & Payments | Charges, invoices, refunds |
-| 1 | Technical Errors | Crashes, bugs, failures |
-| 2 | Authentication | Login & password issues |
-| 3 | Account Management | Profile & settings |
-| 4 | Performance Issues | Slow response & timeouts |
-| 5 | General Support | Mixed or emerging issues |
-
----
-
 ## 🔮 Future Enhancements
 
-- [ ] **Sentence-transformer embeddings** for better semantic understanding
-- [ ] **Dynamic cluster updates** as new tickets arrive
+- [ ] **Sentence-transformer embeddings** for deeper semantics
+- [ ] **Dynamic cluster updates** for streaming data
 - [ ] **Drift detection** for emerging issues
 - [ ] **Persistent analytics storage**
 - [ ] **Multilingual expansion**
 - [ ] **Visualization dashboard** for cluster exploration
+- [ ] **Public cloud deployment** (AWS / Azure / GCP)
 
 ---
 
@@ -395,8 +298,8 @@ This project demonstrates:
 ✓ **Unsupervised NLP modeling**  
 ✓ **Real-world support analytics**  
 ✓ **ML-to-API system design**  
-✓ **Cloud deployment awareness**  
-✓ **Business-driven ML thinking**
+✓ **Cloud-aware architecture thinking**  
+✓ **Business-driven ML decisions**
 
 ### It Goes Beyond:
 
@@ -407,9 +310,9 @@ This project demonstrates:
 ### Skills Demonstrated
 - Unsupervised machine learning
 - NLP and text processing
-- RESTful API development
-- Cloud architecture (AWS)
-- Production ML system design
+- RESTful API development with FastAPI
+- Production-ready system architecture
+- Business-focused ML evaluation
 
 ---
 
@@ -417,7 +320,7 @@ This project demonstrates:
 
 This system can be adapted for:
 - **SaaS** — Support ticket intelligence
-- **E-commerce** — Inquiry analysis
+- **E-commerce** — Customer inquiry analysis
 - **Healthcare** — Patient feedback clustering
 - **Finance** — Complaint pattern detection
 - **Product teams** — Feature request grouping
@@ -453,6 +356,6 @@ Always open to discussions on:
 
 **⭐ If you find this project useful, consider giving it a star!**
 
-**Built with a production-first ML mindset.**
+**Built with production ML principles in mind.**
 
 </div>
